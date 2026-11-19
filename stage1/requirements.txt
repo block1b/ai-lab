@@ -1,0 +1,5 @@
+# 阶段 1 依赖：用 LangChain 通过 OpenAI 兼容模式调用通义千问
+# 安装：pip install -r requirements.txt
+langchain>=0.3.0
+langchain-openai>=0.2.0
+python-dotenv>=1.0.0
