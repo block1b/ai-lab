@@ -1,0 +1,11 @@
+# 阶段 4 依赖（与 stage1-3 共用环境）
+langchain>=0.3.0
+langchain-openai>=0.2.0
+langchain-core>=0.3.0
+langgraph>=0.2.0
+langgraph-checkpoint>=2.0.0
+python-dotenv>=1.0.0
+pydantic>=2.0
+numpy>=1.24
+# MCP（可选，用于 mcp/server.py 与 mcp/client.py）
+mcp>=1.0.0

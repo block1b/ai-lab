@@ -23,6 +23,7 @@ stage3/
 ├── evaluate.py          # ★ 评估闭环：三项硬指标
 ├── cli.py               # 命令行问答
 └── examples/
+    ├── 00_end_to_end.py         # ★ 端到端样例：五环节逐步打印中间结果
     ├── 01_chunking_compare.py   # 分块对比实验
     ├── 02_retrieval_compare.py  # 检索对比实验
     └── 03_rerank_compare.py     # 重排对比实验
@@ -32,6 +33,10 @@ stage3/
 
 ```bash
 cd stage3
+# 0. ★ 端到端样例：先看一个问题如何流过五环节（离线零成本）
+python examples/00_end_to_end.py "5ATM 防水等级是多少？"
+python examples/00_end_to_end.py "5ATM 防水等级是多少？" --live   # 加 --live 调真实千问
+
 # 1. 纯本地实验（不花钱，先看分块效果）
 python examples/01_chunking_compare.py
 
