@@ -24,7 +24,7 @@ stage4/
 ├── memory.py              # ③ 短期记忆（窗口+摘要）+ 长期记忆（向量库）
 ├── graph.py               # ④ LangGraph：有状态 / 规划-执行 / 多 Agent
 ├── mcp/
-│   ├── server.py          # ⑤ FastMCP Server（把工具封装成标准 MCP 服务）
+│   ├── server.py          # ⑤ MCP Server（FastMCP/MCPServer 兼容写法封装工具）
 │   └── client.py          # MCP Client（转成 LangChain 工具接入 Agent）
 ├── acceptance.py          # ★ 阶段验收脚本
 ├── cli.py                 # 四种模式命令行入口
@@ -60,7 +60,7 @@ C:/Python312/python.exe mcp/client.py --agent "营收增长多少"  # 经 MCP �
 |---|---|---|
 | Function Calling（3+ 工具） | `tools/finance_tools.py` | `@tool` + Pydantic Schema；恶意表达式被 AST 白名单拦截 |
 | ReAct 循环 | `react.py` | 手写 messages 序列：System → Human → AI(tool_calls) → Tool → AI... |
-| MCP Server / 接入 | `mcp/` | FastMCP 封装；Client 把 MCP 工具桥接成 BaseTool；**session 生命周期必须覆盖整个 Agent 运行期** |
+| MCP Server / 接入 | `mcp/` | MCPServer（v1 FastMCP / v2 MCPServer 兼容）封装；Client 把 MCP 工具桥接成 BaseTool；**session 生命周期必须覆盖整个 Agent 运行期** |
 | 短期 / 长期记忆 | `memory.py` | 短期=窗口裁剪+摘要压缩；长期=向量库存取 |
 | 规划与分解 | `graph.py::build_plan_graph` | plan → execute → summarize 三节点 StateGraph |
 | LangGraph 有状态 | `graph.py::build_stateful_agent` | `InMemorySaver` + `thread_id` 隔离会话 |
@@ -85,12 +85,16 @@ C:/Python312/python.exe mcp/client.py --agent "营收增长多少"  # 经 MCP �
 - **百炼 embedding 批量 ≤10 条** → `config.py::BatchingEmbeddings` 已处理（阶段 3 踩过的坑）
 - **stdlib 路径冲突** → `tools/` 与 `mcp/` 都显式 `sys.path.insert`；工具层不要 import stage3 的 `corpus`（同名模块会抢先被导入）
 - **eval 安全** → 计算器用 AST 白名单，只允许算术节点，拒绝 `__import__` 等调用
-- **stdio session 生命周期** → MCP Client 必须在同一个 `async with` 内跑完 Agent，不能先返回工具列表
+- **stdio session 生命周期** → MCP Client 用后台线程常驻 event loop 持有 session（`MCPConnection`），覆盖整个 Agent 运行期，不能先返回工具列表再关闭
+- **async/sync 桥接** → MCP 的 `call_tool` 是 async，手写 `run_react` 是同步循环；用 `run_coroutine_threadsafe(...).result()` 桥接，**不能在 async 上下文里 `asyncio.run()` 嵌套**（会报 "cannot be called from a running event loop"）
+- **mcp 2.x 破坏性变更** → `FastMCP` → `MCPServer`（`mcp.server.mcpserver`）、`inputSchema` → `input_schema`；代码已做双版本兼容，`requirements.txt` 用 `mcp>=1.0.0` 即可
+- **本地 `mcp/` 目录与 pip 包同名** → 直接运行 `python mcp/client.py` 没问题；若要从代码导入用文件路径加载（`importlib.util.spec_from_file_location`），写 `from mcp.client import ...` 会导入 pip 包而非本地文件
 - **工具失败要反馈给模型** → 异常转成 `ToolMessage` 塞回对话，让模型自我修正，而不是直接崩
 - **API Key 401** → `sk-ws-` 开头的工作空间 Key 若失效，到百炼控制台检查状态；脚手架不硬编码 Key
 
 ## 七、当前环境状态（2026-11-25）
 
 - Python 3.12（`C:\Python312\python.exe`），langgraph 1.2.22 / langchain 1.5.0 / pydantic 2.14.3 已装
-- `mcp` 包安装中（后台），装好后才能跑 `mcp/` 下的示例
+- `mcp` 2.3.0 已装；MCP Server + Client 全链路**离线实测通过**：4 个工具跨进程发现并调用成功（calculator / growth_rate / get_metric / rag_search）
+- 本地 `mcp/` 目录与 pip 包同名，从代码导入本地 client 要用文件路径加载（见坑点）
 - 百炼 API Key 返回 401，**无法实时验证真实 function calling**；离线模拟全部通过

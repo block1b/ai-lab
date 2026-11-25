@@ -12,11 +12,15 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from mcp.server.fastmcp import FastMCP
+# mcp 2.x 把 FastMCP 改名为 MCPServer；两种版本都兼容
+try:
+    from mcp.server.fastmcp import FastMCP as MCPServer  # mcp < 2
+except ImportError:
+    from mcp.server.mcpserver import MCPServer  # mcp >= 2
 
 from tools.finance_tools import calculate, get_metric, growth_rate, rag_search
 
-mcp = FastMCP("finance-report-tools")
+mcp = MCPServer("finance-report-tools")
 
 
 @mcp.tool()

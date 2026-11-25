@@ -9,6 +9,7 @@
 | [`stage3/`](stage3/) | **RAG 检索增强**：分块→向量化→混合检索→重排→带引用生成，含三项硬指标评估（Recall@5/Faithfulness/幻觉率） | Python + LangChain + 百 Embedding |
 | [`stage4/`](stage4/) | **Agent 核心**：Function Calling / 手写 ReAct / MCP / 短期+长期记忆 / LangGraph 有状态工作流 / 多 Agent 协作，验收为「分析财报：检索→计算→汇总」 | Python + LangGraph + FastMCP |
 | [`agent-demo/`](agent-demo/) | **MCP 工具调用 Agent**：MCP Server（stdio）暴露 3 个工具，客户端自动转 function calling 并跑完整推理循环，含危险操作护栏与多租户越权校验 | Go + mark3labs/mcp-go |
+| [`go-lab/`](go-lab/) | **前 4 阶段的 Go 对照实现**：用 Eino 重写 stage1-4，含 Python↔Go 概念映射表，与 Python 版并存方便逐段比对 | Go + Eino + mcp-go |
 
 ## 为什么要按这个顺序
 
@@ -37,6 +38,9 @@ cd stage4 && C:/Python312/python.exe acceptance.py && C:/Python312/python.exe ex
 
 # agent-demo：MCP Server + Agent 循环（mock 模式无需任何 API Key）
 cd agent-demo && go build -o bin/mcp-server ./cmd/server && go run ./cmd/agent -mock
+
+# go-lab：Go 对照实现（离线测试零成本，复用 stage1/.env）
+cd go-lab && go test ./stage3 -v && go run ./stage2/cmd --demo && go run ./stage4/cmd --tools
 ```
 
 ## 设计原则
